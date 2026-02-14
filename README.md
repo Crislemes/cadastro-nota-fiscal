@@ -1,49 +1,89 @@
-# 📋 Cadastro de Nota Fiscal
+# 📋 Sistema de Cadastro de Nota Fiscal
 
-Sistema web para cadastro e geração de notas fiscais de serviços mecânicos. Desenvolvido para o A&C Centro Automotivo, permite registrar dados de clientes, peças utilizadas, mão de obra e gerar PDFs profissionais das notas fiscais.
+Sistema completo para cadastro e geração de notas fiscais de serviços mecânicos.
 
-## 🚀 Tecnologias
+## 📁 Estrutura do Projeto
 
-- React 18 + TypeScript
+```
+Cadastro de Nota Fiscal/
+├── frontend/          # React + TypeScript + Vite
+│   ├── src/
+│   ├── package.json
+│   └── DEPLOY-VERCEL.md
+│
+└── backend/           # Node.js + Express + SQLite
+    ├── server.js
+    ├── package.json
+    └── DEPLOY.md
+```
+
+## 🚀 Deploy
+
+### Frontend (Vercel)
+```bash
+cd frontend
+npm install
+npm run build
+```
+Siga o guia: `frontend/DEPLOY-VERCEL.md`
+
+### Backend (Render)
+```bash
+cd backend
+npm install
+npm start
+```
+Siga o guia: `backend/DEPLOY.md`
+
+## 💻 Desenvolvimento Local
+
+### Backend
+```bash
+cd backend
+npm install
+npm start
+# Roda em http://localhost:3001
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+# Roda em http://localhost:5173
+```
+
+## 🔗 URLs de Produção
+
+- **Frontend**: https://seu-projeto.vercel.app
+- **Backend**: https://nota-fiscal-backend.onrender.com
+
+## 📦 Tecnologias
+
+### Frontend
+- React 18
+- TypeScript
 - Vite
 - Tailwind CSS
 - shadcn/ui
 - jsPDF
 
-## 💻 Como Executar Localmente
+### Backend
+- Node.js
+- Express
+- SQLite
+- better-sqlite3
 
-### Pré-requisitos
-- Node.js (versão 16 ou superior)
-- npm ou pnpm
+## ✨ Funcionalidades
 
-### Instalação e Execução
+- ✅ Cadastro de clientes
+- ✅ Cadastro de veículos
+- ✅ Gerenciamento de notas fiscais
+- ✅ Controle de peças e mão de obra
+- ✅ Geração de PDF
+- ✅ Busca e filtros
+- ✅ Edição e exclusão de notas
 
-```bash
-# Instalar dependências
-npm i
+## 📄 Licença
 
-# Iniciar servidor de desenvolvimento
-npm run dev
-```
-
-O projeto estará disponível em `http://localhost:5173`
-
-### Build para Produção
-
-```bash
-npm run build
-```
-
-## 📦 Funcionalidades
-
-- ✅ Cadastro de dados do cliente (nome, CPF/CNPJ, telefone, endereço)
-- ✅ Gerenciamento de peças utilizadas (nome, quantidade, valor unitário)
-- ✅ Registro de valor de mão de obra
-- ✅ Cálculo automático de totais
-- ✅ Validação de formulários
-- ✅ Geração de PDF da nota fiscal
-- ✅ Interface responsiva
-
-## 🎨 Design
-
-Design original disponível no Figma: https://www.figma.com/design/5YKqQdOR5BcPuq81vbNSzJ/Cadastro-de-Nota-Fiscal
+Desenvolvido para A&C Centro Automotivo © 2026
