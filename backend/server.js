@@ -8,16 +8,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-// Conectar ao banco SQLite
-const db = new Database('C:\\database\\oficina.db');
+// Conectar ao banco SQLite (caminho relativo ao projeto)
+const dbPath = join(__dirname, 'oficina.db');
+const db = new Database(dbPath);
 
-// CORS configurado para aceitar requisições do frontend
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+// CORS configurado para aceitar requisições externas
+app.use(cors());
 app.use(express.json());
 
 // ==================== CLIENTES ====================
@@ -215,5 +213,5 @@ app.get('/api/notas-fiscais/buscar/:nome', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
-  console.log(`📊 Banco de dados: C:\\database\\oficina.db`);
+  console.log(`📊 Banco de dados: ${dbPath}`);
 });
