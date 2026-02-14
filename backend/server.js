@@ -18,6 +18,19 @@ const db = new Database(dbPath);
 app.use(cors());
 app.use(express.json());
 
+// Rota raiz para verificar se o servidor está funcionando
+app.get('/', (req, res) => {
+  res.json({ 
+    message: '🚀 API de Notas Fiscais está funcionando!',
+    endpoints: [
+      'GET /api/clientes',
+      'POST /api/clientes',
+      'GET /api/notas-fiscais',
+      'POST /api/notas-fiscais'
+    ]
+  });
+});
+
 // ==================== CLIENTES ====================
 app.post('/api/clientes', (req, res) => {
   try {
