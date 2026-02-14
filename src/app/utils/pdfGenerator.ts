@@ -8,6 +8,12 @@ interface ClientData {
   address: string;
 }
 
+interface VehicleData {
+  plate: string;
+  year: string;
+  model: string;
+}
+
 interface Part {
   id: string;
   name: string;
@@ -17,6 +23,7 @@ interface Part {
 
 interface InvoiceData {
   clientData: ClientData;
+  vehicleData: VehicleData;
   parts: Part[];
   laborCost: number;
   observations: string;
@@ -40,15 +47,19 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   }
 
   // Cabeçalho
-  doc.setFontSize(18);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(37, 99, 235); // Azul
-  doc.text('NOTA FISCAL DE SERVIÇO', pageWidth / 2, yPosition, { align: 'center' });
+  doc.text('A&C CENTRO AUTOMOTIVO', pageWidth / 2, yPosition, { align: 'center' });
   
   yPosition += 8;
-  doc.setFontSize(11);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
+  doc.text('NOTA FISCAL DE SERVIÇO', pageWidth / 2, yPosition, { align: 'center' });
+  
+  yPosition += 6;
+  doc.setFontSize(11);
   doc.text('Serviços Mecânicos', pageWidth / 2, yPosition, { align: 'center' });
   
   // Data de emissão
@@ -75,14 +86,42 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   doc.setFont('helvetica', 'normal');
   doc.text(`Nome: ${data.clientData.name}`, 15, yPosition);
   
-  yPosition += 6;
-  doc.text(`CPF/CNPJ: ${data.clientData.cpfCnpj}`, 15, yPosition);
+  if (data.clientData.cpfCnpj) {
+    yPosition += 6;
+    doc.text(`CPF/CNPJ: ${data.clientData.cpfCnpj}`, 15, yPosition);
+  }
   
-  yPosition += 6;
-  doc.text(`Telefone: ${data.clientData.phone}`, 15, yPosition);
+  if (data.clientData.phone) {
+    yPosition += 6;
+    doc.text(`Telefone: ${data.clientData.phone}`, 15, yPosition);
+  }
   
-  yPosition += 6;
-  doc.text(`Endereço: ${data.clientData.address}`, 15, yPosition);
+  if (data.clientData.address) {
+    yPosition += 6;
+    doc.text(`Endereço: ${data.clientData.address}`, 15, yPosition);
+  }
+  
+  // Dados do Veículo
+  if (data.vehicleData.plate || data.vehicleData.year || data.vehicleData.model) {
+    yPosition += 8;
+    doc.line(15, yPosition, pageWidth - 15, yPosition);
+    
+    yPosition += 10;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DADOS DO VEÍCULO', 15, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    const vehicleInfo = [];
+    if (data.vehicleData.plate) vehicleInfo.push(`Placa: ${data.vehicleData.plate}`);
+    if (data.vehicleData.year) vehicleInfo.push(`Ano: ${data.vehicleData.year}`);
+    if (data.vehicleData.model) vehicleInfo.push(`Modelo: ${data.vehicleData.model}`);
+    
+    doc.text(vehicleInfo.join(' | '), 15, yPosition);
+  }
   
   // Linha separadora
   yPosition += 8;
@@ -172,14 +211,49 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   }
   
   // Rodapé
-  const footerY = doc.internal.pageSize.getHeight() - 15;
+  const footerY = doc.internal.pageSize.getHeight() - 25;
+  
+  // Agradecimento
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(37, 99, 235);
+  doc.text(
+    'AGRADECEMOS A PREFERÊNCIA!',
+    pageWidth / 2,
+    footerY,
+    { align: 'center' }
+  );
+  
+  // Informações de contato
+  yPosition = footerY + 6;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  doc.text(
+    'INFORMAÇÕES DE CONTATO:',
+    pageWidth / 2,
+    yPosition,
+    { align: 'center' }
+  );
+  
+  yPosition += 4;
+  doc.setFontSize(8);
+  doc.text(
+    'Alessandro da Silva | (31) 9 9911-2667 | cristimaria077@gmail.com',
+    pageWidth / 2,
+    yPosition,
+    { align: 'center' }
+  );
+  
+  // Linha final
+  yPosition += 4;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(100, 100, 100);
   doc.text(
     'A&C Centro Automotivo - Sistema de Gestão de Notas Fiscais',
     pageWidth / 2,
-    footerY,
+    yPosition,
     { align: 'center' }
   );
   
