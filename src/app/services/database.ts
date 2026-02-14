@@ -1,5 +1,7 @@
 // Serviço de banco de dados SQLite via API Backend
-const API_URL = 'http://localhost:3001/api';
+const API_URL = import.meta.env.PROD 
+  ? 'https://nota-fiscal-backend.onrender.com/api'
+  : 'http://localhost:3001/api';
 
 export interface Cliente {
   id?: number;
