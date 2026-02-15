@@ -217,11 +217,9 @@ function createWindow() {
   if (isDev) {
     setTimeout(() => {
       mainWindow.loadURL('http://localhost:5173');
-      mainWindow.webContents.openDevTools();
     }, 2000);
   } else {
     mainWindow.loadFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
-    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {
