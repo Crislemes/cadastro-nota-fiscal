@@ -95,22 +95,33 @@ export function ViewInvoice({ invoiceId, onBack }: ViewInvoiceProps) {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
-              <img 
-                src={logoImage} 
-                alt="A&C Centro Automotivo" 
-                className="h-14 sm:h-16 object-contain"
-              />
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-4 flex-1">
+              <div className="bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
+                <img 
+                  src={logoImage} 
+                  alt="A&C Centro Automotivo" 
+                  className="h-14 sm:h-16 object-contain"
+                />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                  Visualizar Nota Fiscal
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  {nota.numero_nota} - {formatDate(nota.criado_em)}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-                Visualizar Nota Fiscal
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {nota.numero_nota} - {formatDate(nota.criado_em)}
-              </p>
-            </div>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>

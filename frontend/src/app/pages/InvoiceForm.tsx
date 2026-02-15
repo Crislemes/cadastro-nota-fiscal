@@ -229,22 +229,33 @@ export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4">
-            <div className="bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
-              <img 
-                src={logoImage} 
-                alt="A&C Centro Automotivo" 
-                className="h-14 sm:h-16 object-contain"
-              />
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              onClick={onBack}
+              variant="ghost"
+              size="sm"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 flex-1">
+              <div className="bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
+                <img 
+                  src={logoImage} 
+                  alt="A&C Centro Automotivo" 
+                  className="h-14 sm:h-16 object-contain"
+                />
+              </div>
+              <div className="text-center sm:text-left">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                  {editInvoiceId ? 'Editar Nota Fiscal' : 'Sistema de Nota Fiscal'}
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  Gestão de Serviços Mecânicos
+                </p>
+              </div>
             </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-                {editInvoiceId ? 'Editar Nota Fiscal' : 'Sistema de Nota Fiscal'}
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Gestão de Serviços Mecânicos
-              </p>
-            </div>
+            <div className="w-10"></div>
           </div>
         </div>
       </header>
