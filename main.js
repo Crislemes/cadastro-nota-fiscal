@@ -1,9 +1,12 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
 let mainWindow;
 let backendProcess;
+
+// Remover menu padrão
+Menu.setApplicationMenu(null);
 
 // Iniciar backend
 function startBackend() {
@@ -13,7 +16,11 @@ function startBackend() {
     : path.join(process.resourcesPath, 'backend', 'server.js');
 
   backendProcess = spawn('node', [backendPath], {
-    env: { ...process.env, PORT: '3001' }
+    env: { 
+      ...process.env, 
+      PORT: '3001',
+      PORTABLE_EXECUTABLE_DIR: app.getPath('userData')
+    }
   });
 
   backendProcess.stdout.on('data', (data) => {
@@ -35,8 +42,12 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'build', 'icon.png')
+    icon: path.join(__dirname, 'build', 'icon.png'),
+    autoHideMenuBar: true
   });
+
+  // Remover menu da janela
+  mainWindow.setMenu(null);
 
   const isDev = !app.isPackaged;
   
