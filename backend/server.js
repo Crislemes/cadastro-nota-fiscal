@@ -11,17 +11,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Conectar ao banco SQLite
-// Em desenvolvimento: backend/oficina.db
-// Em produção (empacotado): pasta de dados do usuário
 let dbPath;
 if (process.env.PORTABLE_EXECUTABLE_DIR) {
-  // Electron empacotado
-  const { app: electronApp } = require('electron');
-  const userDataPath = electronApp ? electronApp.getPath('userData') : process.env.APPDATA;
-  dbPath = join(userDataPath, 'oficina.db');
+  // App empacotado - usar pasta do usuário
+  dbPath = join(process.env.PORTABLE_EXECUTABLE_DIR, 'oficina.db');
+  console.log('📦 Modo empacotado - Banco em:', dbPath);
 } else {
   // Desenvolvimento
   dbPath = join(__dirname, 'oficina.db');
+  console.log('🛠️ Modo desenvolvimento - Banco em:', dbPath);
 }
 
 const db = new Database(dbPath);
