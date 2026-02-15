@@ -7,7 +7,7 @@ import { Button } from "../components/ui/button";
 import { Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { db } from "../services/database";
-import logoImage from "../../assets/b3da8dea4f58613c66c3dde85a4836b5e6655bf8.png";
+import logoImage from "../../assets/logo-marca-oficina.png";
 
 interface ClientData {
   name: string;

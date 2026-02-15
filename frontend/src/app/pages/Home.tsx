@@ -5,7 +5,7 @@ import { Input } from "../components/ui/input";
 import { Eye, FileDown, Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { db, NotaFiscal } from "../services/database";
 import { toast } from "sonner";
-import logoImage from "../../assets/b3da8dea4f58613c66c3dde85a4836b5e6655bf8.png";
+import logoImage from "../../assets/logo-marca-oficina.png";
 
 interface HomeProps {
   onNavigateToForm: () => void;
