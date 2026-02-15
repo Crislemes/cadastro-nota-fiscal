@@ -5,7 +5,7 @@ import { ArrowLeft, FileDown, User, Car, Wrench, Calculator } from "lucide-react
 import { db, NotaFiscal, Cliente, Veiculo, ItemNotaFiscal } from "../services/database";
 import { generateInvoicePDF } from "../utils/pdfGenerator";
 import { toast } from "sonner";
-import logoImage from "../../assets/b3da8dea4f58613c66c3dde85a4836b5e6655bf8.png";
+import logoImage from "../../assets/logo-marca-oficina.png";
 
 interface ViewInvoiceProps {
   invoiceId: number;
