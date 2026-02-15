@@ -83,7 +83,7 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(55, 65, 81); // gray-700
   doc.text('Alessandro da Silva | (31) 9.9911-2667', margin + 3, y + 10);
-  doc.text('cristimaria77@gmail.com', margin + 3, y + 14);
+  doc.text('cristimaria077@gmail.com', margin + 3, y + 14);
 
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128); // gray-500
@@ -214,18 +214,16 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   y += 6;
 
   // TOTAIS
-  const totalsX = pageWidth - margin - 60;
-  
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(107, 114, 128); // gray-600
-  doc.text('Total das Peças:', totalsX, y);
+  doc.text('Total das Peças:', margin + 3, y);
   doc.setTextColor(31, 41, 55); // gray-800
   doc.text(formatCurrency(data.partsTotal), pageWidth - margin - 3, y, { align: 'right' });
 
   y += 5;
   doc.setTextColor(107, 114, 128); // gray-600
-  doc.text('Mão de Obra:', totalsX, y);
+  doc.text('Mão de Obra:', margin + 3, y);
   doc.setTextColor(31, 41, 55); // gray-800
   doc.text(formatCurrency(data.laborCost), pageWidth - margin - 3, y, { align: 'right' });
 
