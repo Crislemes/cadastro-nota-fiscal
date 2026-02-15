@@ -1,0 +1,43 @@
+{
+  "name": "nota-fiscal-desktop",
+  "version": "1.0.0",
+  "description": "Sistema de Cadastro de Nota Fiscal - Desktop",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "desktop:dev": "electron .",
+    "desktop:build": "electron-builder",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:frontend && npm run desktop:build"
+  },
+  "build": {
+    "appId": "com.ac.notafiscal",
+    "productName": "Nota Fiscal A&C",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "backend/**/*",
+      "frontend/dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "better-sqlite3": "^9.2.2"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  }
+}

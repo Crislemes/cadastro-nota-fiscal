@@ -1,34 +1,59 @@
-# 📋 Sistema de Cadastro de Nota Fiscal
+# 📋 Sistema de Nota Fiscal - Desktop
 
-Sistema para cadastro e geração de notas fiscais de serviços mecânicos.
+Aplicativo desktop offline para cadastro de notas fiscais.
 
-## 🚀 Desenvolvimento Local
+## 🚀 Desenvolvimento
 
-### Backend
+### 1. Instalar Dependências
+
 ```bash
-cd backend
+# Raiz (Electron)
 npm install
-npm start
-# http://localhost:3001
-```
 
-### Frontend
-```bash
+# Frontend
 cd frontend
 npm install
-npm run dev
-# http://localhost:5173
+
+# Backend
+cd ../backend
+npm install
+cd ..
 ```
 
-## 📦 Deploy
+### 2. Executar em Desenvolvimento
 
-- **Frontend**: Vercel - Ver `frontend/DEPLOY-VERCEL.md`
-- **Backend**: Render - Ver `backend/DEPLOY.md`
+```bash
+# Terminal 1: Backend
+cd backend
+npm start
 
-## 💻 Tecnologias
+# Terminal 2: Frontend
+cd frontend
+npm run dev
 
-**Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui, jsPDF  
-**Backend**: Node.js, Express, SQLite
+# Terminal 3: Electron
+npm run desktop:dev
+```
+
+## 📦 Gerar Instalador Windows
+
+```bash
+# 1. Build do frontend
+npm run build:frontend
+
+# 2. Gerar instalador
+npm run desktop:build
+```
+
+O instalador `.exe` estará em `dist-desktop/`
+
+## ✨ Funcionalidades
+
+- ✅ Aplicativo desktop offline
+- ✅ Banco SQLite local
+- ✅ Geração de PDF
+- ✅ Sem necessidade de internet
+- ✅ Instalador Windows
 
 ---
 
