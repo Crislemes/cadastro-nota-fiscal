@@ -77,7 +77,7 @@ export function ServiceDataSection({
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100 border-b">
-                    <th className="text-left p-3 text-sm">Nome da Peça</th>
+                    <th className="text-left p-3 text-sm">Descrição</th>
                     <th className="text-left p-3 text-sm w-24">Qtd</th>
                     <th className="text-left p-3 text-sm w-32">Valor Unit.</th>
                     <th className="text-left p-3 text-sm w-32">Subtotal</th>
@@ -91,7 +91,7 @@ export function ServiceDataSection({
                         <Input
                           value={part.name}
                           onChange={(e) => onUpdatePart(part.id, 'name', e.target.value)}
-                          placeholder="Nome da peça"
+                          placeholder="Descrição da peça"
                           className="h-9"
                         />
                       </td>
