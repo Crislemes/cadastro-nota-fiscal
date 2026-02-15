@@ -19,8 +19,8 @@
     "files": [
       "main.js",
       "preload.js",
-      "backend/**/*",
-      "frontend/dist/**/*"
+      "frontend/dist/**/*",
+      "build/icon.png"
     ],
     "win": {
       "target": "nsis",

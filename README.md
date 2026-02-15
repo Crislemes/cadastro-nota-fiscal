@@ -13,25 +13,17 @@ npm install
 # Frontend
 cd frontend
 npm install
-
-# Backend
-cd ../backend
-npm install
 cd ..
 ```
 
 ### 2. Executar em Desenvolvimento
 
 ```bash
-# Terminal 1: Backend
-cd backend
-npm start
-
-# Terminal 2: Frontend
+# Terminal 1: Frontend
 cd frontend
 npm run dev
 
-# Terminal 3: Electron
+# Terminal 2: Electron
 npm run desktop:dev
 ```
 
@@ -47,6 +39,19 @@ npm run desktop:build
 
 O instalador `.exe` estará em `dist-desktop/`
 
+## 📁 Estrutura do Projeto
+
+```
+Cadastro de Nota Fiscal/
+├── frontend/          # React + Vite
+│   ├── src/
+│   └── dist/         (gerado pelo build)
+├── build/            # Ícones do app
+├── main.js           # Electron + Backend integrado
+├── preload.js        # Segurança Electron
+└── package.json      # Configuração Electron
+```
+
 ## ✨ Funcionalidades
 
 - ✅ Aplicativo desktop offline
@@ -54,6 +59,13 @@ O instalador `.exe` estará em `dist-desktop/`
 - ✅ Geração de PDF
 - ✅ Sem necessidade de internet
 - ✅ Instalador Windows
+
+## 💾 Dados
+
+Os dados ficam salvos em:
+```
+C:\Users\[Usuario]\AppData\Roaming\nota-fiscal-desktop\oficina.db
+```
 
 ---
 
