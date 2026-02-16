@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 
 let mainWindow;
 let server;
@@ -16,31 +17,51 @@ function startBackend() {
   
   const db = new Database(dbPath);
   
+  // Nova estrutura do banco de dados
   db.exec(`
-    CREATE TABLE IF NOT EXISTS clientes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    -- Tabela de Usuários (autenticação)
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
-      cpf_cnpj TEXT,
-      telefone TEXT,
-      endereco TEXT,
+      email TEXT UNIQUE NOT NULL,
+      senha_hash TEXT NOT NULL,
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
       atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-    CREATE TABLE IF NOT EXISTS veiculos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      placa TEXT,
-      ano TEXT,
-      modelo TEXT,
-      cliente_id INTEGER,
+
+    -- Tabela de Clientes
+    CREATE TABLE IF NOT EXISTS clientes (
+      id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT NOT NULL,
+      cpf_cnpj TEXT,
+      telefone TEXT NOT NULL,
+      endereco TEXT,
+      observacoes TEXT,
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
       atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+      UNIQUE(nome, telefone)
     );
+
+    -- Tabela de Veículos
+    CREATE TABLE IF NOT EXISTS veiculos (
+      id_veiculo INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_cliente INTEGER NOT NULL,
+      placa TEXT,
+      modelo TEXT,
+      marca TEXT,
+      ano TEXT,
+      criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+      atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente) ON DELETE CASCADE
+    );
+
+    -- Tabela de Notas Fiscais / Serviços
     CREATE TABLE IF NOT EXISTS notas_fiscais (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_nota INTEGER PRIMARY KEY AUTOINCREMENT,
       numero_nota TEXT UNIQUE NOT NULL,
-      cliente_id INTEGER NOT NULL,
-      veiculo_id INTEGER,
+      id_cliente INTEGER NOT NULL,
+      id_veiculo INTEGER,
+      data_emissao DATETIME DEFAULT CURRENT_TIMESTAMP,
       valor_mao_de_obra REAL DEFAULT 0,
       total_pecas REAL DEFAULT 0,
       valor_total REAL NOT NULL,
@@ -48,38 +69,104 @@ function startBackend() {
       status TEXT DEFAULT 'active',
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
       atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-      FOREIGN KEY (veiculo_id) REFERENCES veiculos(id)
+      FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente),
+      FOREIGN KEY (id_veiculo) REFERENCES veiculos(id_veiculo)
     );
-    CREATE TABLE IF NOT EXISTS itens_nota_fiscal (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nota_fiscal_id INTEGER NOT NULL,
-      nome_peca TEXT NOT NULL,
+
+    -- Tabela de Peças
+    CREATE TABLE IF NOT EXISTS pecas (
+      id_peca INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_nota INTEGER NOT NULL,
+      descricao TEXT NOT NULL,
       quantidade INTEGER NOT NULL,
       valor_unitario REAL NOT NULL,
       subtotal REAL NOT NULL,
       criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (nota_fiscal_id) REFERENCES notas_fiscais(id) ON DELETE CASCADE
+      FOREIGN KEY (id_nota) REFERENCES notas_fiscais(id_nota) ON DELETE CASCADE
     );
   `);
-  
+
+  // Criar usuário padrão se não existir
+  try {
+    const userExists = db.prepare('SELECT id_usuario FROM usuarios WHERE email = ?').get('admin@oficina.com');
+    if (!userExists) {
+      const senhaHash = bcrypt.hashSync('admin123', 10);
+      db.prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)').run('Administrador', 'admin@oficina.com', senhaHash);
+      console.log('✅ Usuário padrão criado: admin@oficina.com / admin123');
+    } else {
+      console.log('✅ Usuário padrão já existe');
+    }
+  } catch (error) {
+    console.error('Erro ao criar usuário padrão:', error);
+  }
+
   const expressApp = express();
   expressApp.use(cors());
   expressApp.use(express.json());
   
   expressApp.get('/', (req, res) => res.json({ message: '🚀 API OK' }));
-  
-  expressApp.post('/api/clientes', (req, res) => {
+
+  // ========== AUTENTICAÇÃO ==========
+  expressApp.post('/api/auth/login', (req, res) => {
     try {
-      const { nome, cpf_cnpj, telefone, endereco } = req.body;
-      if (cpf_cnpj) {
-        const existente = db.prepare('SELECT id FROM clientes WHERE cpf_cnpj = ?').get(cpf_cnpj);
-        if (existente) return res.json({ id: existente.id });
+      const { email, senha } = req.body;
+      const usuario = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
+      
+      if (!usuario || !bcrypt.compareSync(senha, usuario.senha_hash)) {
+        return res.status(401).json({ error: 'Email ou senha inválidos' });
       }
-      const result = db.prepare('INSERT INTO clientes (nome, cpf_cnpj, telefone, endereco) VALUES (?, ?, ?, ?)').run(nome, cpf_cnpj, telefone, endereco);
-      res.json({ id: result.lastInsertRowid });
+      
+      res.json({
+        id: usuario.id_usuario,
+        nome: usuario.nome,
+        email: usuario.email
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  expressApp.post('/api/auth/register', (req, res) => {
+    try {
+      const { nome, email, senha } = req.body;
+      const existe = db.prepare('SELECT id_usuario FROM usuarios WHERE email = ?').get(email);
+      
+      if (existe) {
+        return res.status(400).json({ error: 'Email já cadastrado' });
+      }
+      
+      const senhaHash = bcrypt.hashSync(senha, 10);
+      const result = db.prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)').run(nome, email, senhaHash);
+      
+      res.json({ 
+        id: result.lastInsertRowid,
+        nome,
+        email
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== CLIENTES ==========
+  expressApp.post('/api/clientes', (req, res) => {
+    try {
+      const { nome, cpf_cnpj, telefone, endereco, observacoes } = req.body;
+      
+      // Verifica duplicação por nome + telefone (obrigatório)
+      const existente = db.prepare('SELECT id_cliente FROM clientes WHERE nome = ? AND telefone = ?').get(nome, telefone);
+      if (existente) {
+        return res.status(400).json({ error: 'Cliente com mesmo nome e telefone já cadastrado', id: existente.id_cliente });
+      }
+      
+      const result = db.prepare('INSERT INTO clientes (nome, cpf_cnpj, telefone, endereco, observacoes) VALUES (?, ?, ?, ?, ?)').run(nome, cpf_cnpj, telefone, endereco, observacoes);
+      res.json({ id: result.lastInsertRowid });
+    } catch (error) {
+      if (error.message.includes('UNIQUE constraint failed')) {
+        res.status(400).json({ error: 'Cliente já cadastrado' });
+      } else {
+        res.status(500).json({ error: error.message });
+      }
     }
   });
   
@@ -93,16 +180,36 @@ function startBackend() {
   
   expressApp.get('/api/clientes/:id', (req, res) => {
     try {
-      res.json(db.prepare('SELECT * FROM clientes WHERE id = ?').get(req.params.id));
+      res.json(db.prepare('SELECT * FROM clientes WHERE id_cliente = ?').get(req.params.id));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  expressApp.put('/api/clientes/:id', (req, res) => {
+    try {
+      const { nome, cpf_cnpj, telefone, endereco, observacoes } = req.body;
+      db.prepare('UPDATE clientes SET nome = ?, cpf_cnpj = ?, telefone = ?, endereco = ?, observacoes = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id_cliente = ?').run(nome, cpf_cnpj, telefone, endereco, observacoes, req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  expressApp.delete('/api/clientes/:id', (req, res) => {
+    try {
+      db.prepare('DELETE FROM clientes WHERE id_cliente = ?').run(req.params.id);
+      res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
   
+  // ========== VEÍCULOS ==========
   expressApp.post('/api/veiculos', (req, res) => {
     try {
-      const { placa, ano, modelo, cliente_id } = req.body;
-      const result = db.prepare('INSERT INTO veiculos (placa, ano, modelo, cliente_id) VALUES (?, ?, ?, ?)').run(placa, ano, modelo, cliente_id);
+      const { id_cliente, placa, modelo, marca, ano } = req.body;
+      const result = db.prepare('INSERT INTO veiculos (id_cliente, placa, modelo, marca, ano) VALUES (?, ?, ?, ?, ?)').run(id_cliente, placa, modelo, marca, ano);
       res.json({ id: result.lastInsertRowid });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -111,20 +218,29 @@ function startBackend() {
   
   expressApp.get('/api/veiculos/:id', (req, res) => {
     try {
-      res.json(db.prepare('SELECT * FROM veiculos WHERE id = ?').get(req.params.id));
+      res.json(db.prepare('SELECT * FROM veiculos WHERE id_veiculo = ?').get(req.params.id));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  expressApp.get('/api/clientes/:id/veiculos', (req, res) => {
+    try {
+      res.json(db.prepare('SELECT * FROM veiculos WHERE id_cliente = ? ORDER BY criado_em DESC').all(req.params.id));
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
   
+  // ========== NOTAS FISCAIS ==========
   expressApp.post('/api/notas-fiscais', (req, res) => {
     try {
-      const { numero_nota, cliente_id, veiculo_id, valor_mao_de_obra, total_pecas, valor_total, observacoes, status, itens } = req.body;
+      const { numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status, pecas } = req.body;
       db.exec('BEGIN TRANSACTION');
-      const resultNota = db.prepare('INSERT INTO notas_fiscais (numero_nota, cliente_id, veiculo_id, valor_mao_de_obra, total_pecas, valor_total, observacoes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(numero_nota, cliente_id, veiculo_id, valor_mao_de_obra, total_pecas, valor_total, observacoes, status);
+      const resultNota = db.prepare('INSERT INTO notas_fiscais (numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status);
       const notaId = resultNota.lastInsertRowid;
-      const stmtItem = db.prepare('INSERT INTO itens_nota_fiscal (nota_fiscal_id, nome_peca, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
-      itens.forEach(item => stmtItem.run(notaId, item.nome_peca, item.quantidade, item.valor_unitario, item.subtotal));
+      const stmtPeca = db.prepare('INSERT INTO pecas (id_nota, descricao, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
+      pecas.forEach(peca => stmtPeca.run(notaId, peca.descricao, peca.quantidade, peca.valor_unitario, peca.subtotal));
       db.exec('COMMIT');
       res.json({ id: notaId });
     } catch (error) {
@@ -135,7 +251,7 @@ function startBackend() {
   
   expressApp.get('/api/notas-fiscais', (req, res) => {
     try {
-      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.cliente_id = c.id ORDER BY nf.criado_em DESC').all());
+      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.id_cliente = c.id_cliente ORDER BY nf.criado_em DESC').all());
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -143,15 +259,15 @@ function startBackend() {
   
   expressApp.get('/api/notas-fiscais/:id', (req, res) => {
     try {
-      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.cliente_id = c.id WHERE nf.id = ?').get(req.params.id));
+      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.id_cliente = c.id_cliente WHERE nf.id_nota = ?').get(req.params.id));
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
   });
   
-  expressApp.get('/api/notas-fiscais/:id/itens', (req, res) => {
+  expressApp.get('/api/notas-fiscais/:id/pecas', (req, res) => {
     try {
-      res.json(db.prepare('SELECT * FROM itens_nota_fiscal WHERE nota_fiscal_id = ?').all(req.params.id));
+      res.json(db.prepare('SELECT * FROM pecas WHERE id_nota = ?').all(req.params.id));
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -160,8 +276,8 @@ function startBackend() {
   expressApp.delete('/api/notas-fiscais/:id', (req, res) => {
     try {
       db.exec('BEGIN TRANSACTION');
-      db.prepare('DELETE FROM itens_nota_fiscal WHERE nota_fiscal_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM notas_fiscais WHERE id = ?').run(req.params.id);
+      db.prepare('DELETE FROM pecas WHERE id_nota = ?').run(req.params.id);
+      db.prepare('DELETE FROM notas_fiscais WHERE id_nota = ?').run(req.params.id);
       db.exec('COMMIT');
       res.json({ success: true });
     } catch (error) {
@@ -172,12 +288,12 @@ function startBackend() {
   
   expressApp.put('/api/notas-fiscais/:id', (req, res) => {
     try {
-      const { valor_mao_de_obra, total_pecas, valor_total, observacoes, itens } = req.body;
+      const { valor_mao_de_obra, total_pecas, valor_total, observacoes, pecas } = req.body;
       db.exec('BEGIN TRANSACTION');
-      db.prepare('UPDATE notas_fiscais SET valor_mao_de_obra = ?, total_pecas = ?, valor_total = ?, observacoes = ? WHERE id = ?').run(valor_mao_de_obra, total_pecas, valor_total, observacoes, req.params.id);
-      db.prepare('DELETE FROM itens_nota_fiscal WHERE nota_fiscal_id = ?').run(req.params.id);
-      const stmtItem = db.prepare('INSERT INTO itens_nota_fiscal (nota_fiscal_id, nome_peca, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
-      itens.forEach(item => stmtItem.run(req.params.id, item.nome_peca, item.quantidade, item.valor_unitario, item.subtotal));
+      db.prepare('UPDATE notas_fiscais SET valor_mao_de_obra = ?, total_pecas = ?, valor_total = ?, observacoes = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id_nota = ?').run(valor_mao_de_obra, total_pecas, valor_total, observacoes, req.params.id);
+      db.prepare('DELETE FROM pecas WHERE id_nota = ?').run(req.params.id);
+      const stmtPeca = db.prepare('INSERT INTO pecas (id_nota, descricao, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
+      pecas.forEach(peca => stmtPeca.run(req.params.id, peca.descricao, peca.quantidade, peca.valor_unitario, peca.subtotal));
       db.exec('COMMIT');
       res.json({ success: true });
     } catch (error) {
@@ -188,7 +304,7 @@ function startBackend() {
   
   expressApp.get('/api/notas-fiscais/buscar/:nome', (req, res) => {
     try {
-      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.cliente_id = c.id WHERE c.nome LIKE ? ORDER BY nf.criado_em DESC').all(`%${req.params.nome}%`));
+      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.id_cliente = c.id_cliente WHERE c.nome LIKE ? ORDER BY nf.criado_em DESC').all(`%${req.params.nome}%`));
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -217,6 +333,7 @@ function createWindow() {
   if (isDev) {
     setTimeout(() => {
       mainWindow.loadURL('http://localhost:5173');
+      mainWindow.webContents.openDevTools();
     }, 2000);
   } else {
     mainWindow.loadFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));

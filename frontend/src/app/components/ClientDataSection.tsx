@@ -53,32 +53,35 @@ export function ClientDataSection({ clientData, onChange }: ClientDataSectionPro
           </div>
           
           <div>
-            <Label htmlFor="cpfCnpj">CPF/CNPJ</Label>
+            <Label htmlFor="cpfCnpj">CPF/CNPJ *</Label>
             <Input
               id="cpfCnpj"
               value={clientData.cpfCnpj}
               onChange={handleCPFCNPJChange}
               placeholder="000.000.000-00"
+              required
             />
           </div>
           
           <div>
-            <Label htmlFor="phone">Telefone</Label>
+            <Label htmlFor="phone">Telefone *</Label>
             <Input
               id="phone"
               value={clientData.phone}
               onChange={handlePhoneChange}
               placeholder="(00) 00000-0000"
+              required
             />
           </div>
           
           <div className="md:col-span-2">
-            <Label htmlFor="address">Endereço Completo</Label>
+            <Label htmlFor="address">Endereço Completo *</Label>
             <Input
               id="address"
               value={clientData.address}
               onChange={(e) => onChange('address', e.target.value)}
               placeholder="Rua, número, bairro, cidade - UF"
+              required
             />
           </div>
         </div>

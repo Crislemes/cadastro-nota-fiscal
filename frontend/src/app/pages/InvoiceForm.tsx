@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useParams } from 'react-router';
+import { Layout } from '../components/Layout';
 import { ClientDataSection } from "../components/ClientDataSection";
-import { VehicleDataSection } from "../components/VehicleDataSection";
 import { ServiceDataSection, Part } from "../components/ServiceDataSection";
 import { InvoiceSummary } from "../components/InvoiceSummary";
 import { Button } from "../components/ui/button";
 import { Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { db } from "../services/database";
-import logoImage from "../../assets/logo-marca-oficina.png";
+import { useData } from '../context/DataContext';
 
 interface ClientData {
   name: string;
@@ -16,18 +16,12 @@ interface ClientData {
   address: string;
 }
 
-interface VehicleData {
-  plate: string;
-  year: string;
-  model: string;
-}
+export function InvoiceForm() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { addInvoice, updateInvoice, getInvoiceById } = useData();
+  const isEditing = !!id;
 
-interface InvoiceFormProps {
-  onBack: () => void;
-  editInvoiceId?: number;
-}
-
-export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
   const [clientData, setClientData] = useState<ClientData>({
     name: '',
     cpfCnpj: '',
@@ -35,68 +29,31 @@ export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
     address: '',
   });
 
-  const [vehicleData, setVehicleData] = useState<VehicleData>({
-    plate: '',
-    year: '',
-    model: '',
-  });
-
   const [parts, setParts] = useState<Part[]>([]);
   const [laborCost, setLaborCost] = useState(0);
   const [observations, setObservations] = useState('');
 
   useEffect(() => {
-    if (editInvoiceId) {
-      loadInvoiceData(editInvoiceId);
-    }
-  }, [editInvoiceId]);
-
-  const loadInvoiceData = async (id: number) => {
-    const nota = await db.getNotaFiscalById(id);
-    if (!nota) return;
-
-    const cliente = await db.getClienteById(nota.cliente_id);
-    if (cliente) {
-      setClientData({
-        name: cliente.nome,
-        cpfCnpj: cliente.cpf_cnpj,
-        phone: cliente.telefone,
-        address: cliente.endereco,
-      });
-    }
-
-    if (nota.veiculo_id) {
-      const veiculo = await db.getVeiculoById(nota.veiculo_id);
-      if (veiculo) {
-        setVehicleData({
-          plate: veiculo.placa,
-          year: veiculo.ano,
-          model: veiculo.modelo,
-        });
+    if (isEditing && id) {
+      const invoice = getInvoiceById(id);
+      if (invoice) {
+        setClientData(invoice.clientData);
+        setParts(invoice.parts);
+        setLaborCost(invoice.laborCost);
+        setObservations(invoice.observations);
+      } else {
+        toast.error('Nota fiscal não encontrada');
+        navigate('/notas');
       }
     }
+  }, [id, isEditing, getInvoiceById, navigate]);
 
-    const itens = await db.getItensByNotaId(id);
-    setParts(itens.map(item => ({
-      id: item.id!.toString(),
-      name: item.nome_peca,
-      quantity: item.quantidade,
-      unitPrice: item.valor_unitario,
-    })));
-
-    setLaborCost(nota.valor_mao_de_obra);
-    setObservations(nota.observacoes);
-  };
-
+  // Cálculos automáticos
   const partsTotal = parts.reduce((sum, part) => sum + (part.quantity * part.unitPrice), 0);
   const total = partsTotal + laborCost;
 
   const handleClientDataChange = (field: keyof ClientData, value: string) => {
     setClientData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleVehicleDataChange = (field: keyof VehicleData, value: string) => {
-    setVehicleData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleAddPart = () => {
@@ -109,15 +66,15 @@ export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
     setParts(prev => [...prev, newPart]);
   };
 
-  const handleRemovePart = (id: string) => {
-    setParts(prev => prev.filter(part => part.id !== id));
+  const handleRemovePart = (partId: string) => {
+    setParts(prev => prev.filter(part => part.id !== partId));
     toast.success('Peça removida com sucesso!');
   };
 
-  const handleUpdatePart = (id: string, field: keyof Part, value: string | number) => {
+  const handleUpdatePart = (partId: string, field: keyof Part, value: string | number) => {
     setParts(prev =>
       prev.map(part =>
-        part.id === id ? { ...part, [field]: value } : part
+        part.id === partId ? { ...part, [field]: value } : part
       )
     );
   };
@@ -127,12 +84,26 @@ export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
       toast.error('Por favor, preencha o nome do cliente.');
       return false;
     }
+    if (!clientData.cpfCnpj.trim()) {
+      toast.error('Por favor, preencha o CPF/CNPJ do cliente.');
+      return false;
+    }
+    if (!clientData.phone.trim()) {
+      toast.error('Por favor, preencha o telefone do cliente.');
+      return false;
+    }
+    if (!clientData.address.trim()) {
+      toast.error('Por favor, preencha o endereço do cliente.');
+      return false;
+    }
 
+    // Validar se há pelo menos uma peça ou valor de mão de obra
     if (parts.length === 0 && laborCost === 0) {
       toast.error('Por favor, adicione pelo menos uma peça ou informe o valor da mão de obra.');
       return false;
     }
 
+    // Validar peças preenchidas corretamente
     for (const part of parts) {
       if (!part.name.trim()) {
         toast.error('Por favor, preencha o nome de todas as peças.');
@@ -151,176 +122,99 @@ export function InvoiceForm({ onBack, editInvoiceId }: InvoiceFormProps) {
     return true;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validateForm()) return;
 
-    try {
-      if (editInvoiceId) {
-        // Atualizar nota existente
-        const itens = parts.map(part => ({
-          nota_fiscal_id: editInvoiceId,
-          nome_peca: part.name,
-          quantidade: part.quantity,
-          valor_unitario: part.unitPrice,
-          subtotal: part.quantity * part.unitPrice,
-        }));
+    const invoiceData = {
+      clientData,
+      parts,
+      laborCost,
+      observations,
+      partsTotal,
+      total,
+      status: 'saved' as const,
+    };
 
-        await db.atualizarNotaFiscal(editInvoiceId, {
-          valor_mao_de_obra: laborCost,
-          total_pecas: partsTotal,
-          valor_total: total,
-          observacoes: observations,
-        }, itens);
-
-        toast.success('Nota fiscal atualizada com sucesso!');
-      } else {
-        // Criar nova nota
-        const clienteId = await db.salvarCliente({
-          nome: clientData.name,
-          cpf_cnpj: clientData.cpfCnpj,
-          telefone: clientData.phone,
-          endereco: clientData.address,
-        });
-
-        let veiculoId: number | undefined;
-        if (vehicleData.plate || vehicleData.year || vehicleData.model) {
-          veiculoId = await db.salvarVeiculo({
-            placa: vehicleData.plate,
-            ano: vehicleData.year,
-            modelo: vehicleData.model,
-            cliente_id: clienteId,
-          });
-        }
-
-        const itens = parts.map(part => ({
-          nota_fiscal_id: 0,
-          nome_peca: part.name,
-          quantidade: part.quantity,
-          valor_unitario: part.unitPrice,
-          subtotal: part.quantity * part.unitPrice,
-        }));
-
-        const numeroNota = db.gerarNumeroNota();
-        await db.salvarNotaFiscal({
-          numero_nota: numeroNota,
-          cliente_id: clienteId,
-          veiculo_id: veiculoId,
-          valor_mao_de_obra: laborCost,
-          total_pecas: partsTotal,
-          valor_total: total,
-          observacoes: observations,
-          status: 'active',
-        }, itens);
-
-        toast.success('Nota fiscal salva com sucesso!', {
-          description: `Número: ${numeroNota}`,
-        });
-      }
-
-      setTimeout(() => onBack(), 1000);
-    } catch (error) {
-      toast.error('Erro ao salvar nota fiscal. Tente novamente.');
-      console.error(error);
+    if (isEditing && id) {
+      updateInvoice(id, invoiceData);
+      toast.success('Nota fiscal atualizada com sucesso!');
+    } else {
+      addInvoice(invoiceData);
+      toast.success('Nota fiscal salva com sucesso!');
     }
+
+    navigate('/notas');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between gap-4">
-            <Button
-              onClick={onBack}
-              variant="ghost"
-              size="sm"
-              className="text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 flex-1">
-              <div className="bg-blue-50 px-6 py-3 rounded-xl border-2 border-blue-200">
-                <img 
-                  src={logoImage} 
-                  alt="A&C Centro Automotivo" 
-                  className="h-14 sm:h-16 object-contain"
-                />
-              </div>
-              <div className="text-center sm:text-left">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-                  {editInvoiceId ? 'Editar Nota Fiscal' : 'Sistema de Nota Fiscal'}
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  Gestão de Serviços Mecânicos
-                </p>
-              </div>
-            </div>
-            <div className="w-10"></div>
+    <Layout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/notas')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {isEditing ? 'Editar Nota Fiscal' : 'Nova Nota Fiscal'}
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {isEditing ? 'Atualize os dados da nota fiscal' : 'Cadastre uma nova nota fiscal de serviço'}
+            </p>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          <ClientDataSection
-            clientData={clientData}
-            onChange={handleClientDataChange}
-          />
+        {/* Dados do Cliente */}
+        <ClientDataSection
+          clientData={clientData}
+          onChange={handleClientDataChange}
+        />
 
-          <VehicleDataSection
-            vehicleData={vehicleData}
-            onChange={handleVehicleDataChange}
-          />
+        {/* Dados do Serviço */}
+        <ServiceDataSection
+          parts={parts}
+          laborCost={laborCost}
+          observations={observations}
+          onAddPart={handleAddPart}
+          onRemovePart={handleRemovePart}
+          onUpdatePart={handleUpdatePart}
+          onLaborCostChange={setLaborCost}
+          onObservationsChange={setObservations}
+        />
 
-          <ServiceDataSection
-            parts={parts}
-            laborCost={laborCost}
-            observations={observations}
-            onAddPart={handleAddPart}
-            onRemovePart={handleRemovePart}
-            onUpdatePart={handleUpdatePart}
-            onLaborCostChange={setLaborCost}
-            onObservationsChange={setObservations}
-          />
+        {/* Resumo */}
+        <InvoiceSummary
+          partsTotal={partsTotal}
+          laborCost={laborCost}
+          total={total}
+        />
 
-          <InvoiceSummary
-            partsTotal={partsTotal}
-            laborCost={laborCost}
-            total={total}
-          />
+        {/* Ações */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <Button
+            onClick={handleSave}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white h-12 text-base"
+            size="lg"
+          >
+            <Save className="h-5 w-5 mr-2" />
+            {isEditing ? 'Atualizar Nota Fiscal' : 'Salvar Nota Fiscal'}
+          </Button>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button
-              onClick={onBack}
-              variant="outline"
-              className="flex-1 h-12 text-base border-2"
-              size="lg"
-            >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              Voltar
-            </Button>
-
-            <Button
-              onClick={handleSave}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white h-12 text-base"
-              size="lg"
-            >
-              <Save className="h-5 w-5 mr-2" />
-              {editInvoiceId ? 'Atualizar Nota Fiscal' : 'Salvar Nota Fiscal'}
-            </Button>
-          </div>
+          <Button
+            onClick={() => navigate('/notas')}
+            variant="outline"
+            className="flex-1 h-12 text-base border-2"
+            size="lg"
+          >
+            Cancelar
+          </Button>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-16 bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <p className="text-center text-sm text-gray-600">
-            A&C Centro Automotivo - Sistema de Gestão de Notas Fiscais © 2026
-          </p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </Layout>
   );
 }
