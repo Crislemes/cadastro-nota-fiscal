@@ -322,7 +322,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true
     },
-    icon: path.join(__dirname, 'build', 'icon.png'),
+    icon: path.join(__dirname, 'build', 'logo-marca-oficina.png'),
     autoHideMenuBar: true
   });
 

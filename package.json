@@ -20,11 +20,12 @@
       "main.js",
       "preload.js",
       "frontend/dist/**/*",
-      "build/icon.png"
+      "build/logo-marca-oficina.png",
+      "build/logo-marca-oficina.ico"
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/logo-marca-oficina.ico"
     },
     "nsis": {
       "oneClick": false,
