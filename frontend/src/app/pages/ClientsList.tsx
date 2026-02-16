@@ -35,10 +35,14 @@ export function ClientsList() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (clientToDelete) {
-      deleteClient(clientToDelete);
-      toast.success('Cliente excluído com sucesso!');
+      try {
+        await deleteClient(clientToDelete);
+        toast.success('Cliente excluído com sucesso!');
+      } catch (error) {
+        toast.error('Erro ao excluir cliente');
+      }
       setDeleteDialogOpen(false);
       setClientToDelete(null);
     }

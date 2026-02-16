@@ -110,18 +110,31 @@ function startBackend() {
   expressApp.post('/api/auth/login', (req, res) => {
     try {
       const { email, senha } = req.body;
+      console.log('Tentativa de login:', email);
+      
       const usuario = db.prepare('SELECT * FROM usuarios WHERE email = ?').get(email);
       
-      if (!usuario || !bcrypt.compareSync(senha, usuario.senha_hash)) {
+      if (!usuario) {
+        console.log('Usuário não encontrado:', email);
         return res.status(401).json({ error: 'Email ou senha inválidos' });
       }
       
+      console.log('Usuário encontrado, verificando senha...');
+      const senhaValida = bcrypt.compareSync(senha, usuario.senha_hash);
+      
+      if (!senhaValida) {
+        console.log('Senha inválida para:', email);
+        return res.status(401).json({ error: 'Email ou senha inválidos' });
+      }
+      
+      console.log('Login bem-sucedido:', email);
       res.json({
         id: usuario.id_usuario,
         nome: usuario.nome,
         email: usuario.email
       });
     } catch (error) {
+      console.error('Erro no login:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -129,14 +142,19 @@ function startBackend() {
   expressApp.post('/api/auth/register', (req, res) => {
     try {
       const { nome, email, senha } = req.body;
+      console.log('Tentativa de registro:', email);
+      
       const existe = db.prepare('SELECT id_usuario FROM usuarios WHERE email = ?').get(email);
       
       if (existe) {
+        console.log('Email já cadastrado:', email);
         return res.status(400).json({ error: 'Email já cadastrado' });
       }
       
       const senhaHash = bcrypt.hashSync(senha, 10);
       const result = db.prepare('INSERT INTO usuarios (nome, email, senha_hash) VALUES (?, ?, ?)').run(nome, email, senhaHash);
+      
+      console.log('Usuário cadastrado com sucesso:', email, 'ID:', result.lastInsertRowid);
       
       res.json({ 
         id: result.lastInsertRowid,
@@ -144,6 +162,7 @@ function startBackend() {
         email
       });
     } catch (error) {
+      console.error('Erro no registro:', error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -336,7 +355,11 @@ function createWindow() {
       mainWindow.webContents.openDevTools();
     }, 2000);
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
+    const indexPath = path.join(__dirname, 'frontend', 'dist', 'index.html');
+    console.log('Loading:', indexPath);
+    mainWindow.loadFile(indexPath).catch(err => {
+      console.error('Erro ao carregar:', err);
+    });
   }
 
   mainWindow.on('closed', () => {

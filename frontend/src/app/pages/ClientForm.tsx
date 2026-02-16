@@ -60,7 +60,7 @@ export function ClientForm() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name.trim()) {
@@ -74,10 +74,10 @@ export function ClientForm() {
 
     try {
       if (isEditing && id) {
-        updateClient(id, formData);
+        await updateClient(id, formData);
         toast.success('Cliente atualizado com sucesso!');
       } else {
-        addClient(formData);
+        await addClient(formData);
         toast.success('Cliente cadastrado com sucesso!');
       }
       navigate('/clientes');
