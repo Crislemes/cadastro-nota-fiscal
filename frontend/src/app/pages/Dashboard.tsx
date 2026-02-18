@@ -10,7 +10,7 @@ export function Dashboard() {
 
   const totalInvoices = invoices.length;
   const totalClients = clients.length;
-  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.total, 0);
+  const totalRevenue = invoices.reduce((sum, inv) => sum + inv.laborCost, 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

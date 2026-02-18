@@ -84,16 +84,8 @@ export function InvoiceForm() {
       toast.error('Por favor, preencha o nome do cliente.');
       return false;
     }
-    if (!clientData.cpfCnpj.trim()) {
-      toast.error('Por favor, preencha o CPF/CNPJ do cliente.');
-      return false;
-    }
     if (!clientData.phone.trim()) {
       toast.error('Por favor, preencha o telefone do cliente.');
-      return false;
-    }
-    if (!clientData.address.trim()) {
-      toast.error('Por favor, preencha o endereço do cliente.');
       return false;
     }
 
