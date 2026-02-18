@@ -61,6 +61,9 @@ function startBackend() {
       numero_nota TEXT UNIQUE NOT NULL,
       id_cliente INTEGER NOT NULL,
       id_veiculo INTEGER,
+      veiculo_placa TEXT,
+      veiculo_modelo TEXT,
+      veiculo_ano TEXT,
       data_emissao DATETIME DEFAULT CURRENT_TIMESTAMP,
       valor_mao_de_obra REAL DEFAULT 0,
       total_pecas REAL DEFAULT 0,
@@ -254,9 +257,9 @@ function startBackend() {
   // ========== NOTAS FISCAIS ==========
   expressApp.post('/api/notas-fiscais', (req, res) => {
     try {
-      const { numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status, pecas } = req.body;
+      const { numero_nota, id_cliente, id_veiculo, veiculo_placa, veiculo_modelo, veiculo_ano, data_emissao, valor_mao_de_obra, total_pecas, valor_total, observacoes, status, pecas } = req.body;
       db.exec('BEGIN TRANSACTION');
-      const resultNota = db.prepare('INSERT INTO notas_fiscais (numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(numero_nota, id_cliente, id_veiculo, valor_mao_de_obra, total_pecas, valor_total, observacoes, status);
+      const resultNota = db.prepare('INSERT INTO notas_fiscais (numero_nota, id_cliente, id_veiculo, veiculo_placa, veiculo_modelo, veiculo_ano, data_emissao, valor_mao_de_obra, total_pecas, valor_total, observacoes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(numero_nota, id_cliente, id_veiculo, veiculo_placa, veiculo_modelo, veiculo_ano, data_emissao, valor_mao_de_obra, total_pecas, valor_total, observacoes, status);
       const notaId = resultNota.lastInsertRowid;
       const stmtPeca = db.prepare('INSERT INTO pecas (id_nota, descricao, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
       pecas.forEach(peca => stmtPeca.run(notaId, peca.descricao, peca.quantidade, peca.valor_unitario, peca.subtotal));
@@ -278,7 +281,26 @@ function startBackend() {
   
   expressApp.get('/api/notas-fiscais/:id', (req, res) => {
     try {
-      res.json(db.prepare('SELECT nf.*, c.nome as cliente_nome FROM notas_fiscais nf JOIN clientes c ON nf.id_cliente = c.id_cliente WHERE nf.id_nota = ?').get(req.params.id));
+      const nota = db.prepare('SELECT nf.*, c.nome as cliente_nome, c.cpf_cnpj, c.telefone, c.endereco FROM notas_fiscais nf JOIN clientes c ON nf.id_cliente = c.id_cliente WHERE nf.id_nota = ?').get(req.params.id);
+      
+      if (!nota) {
+        return res.status(404).json({ error: 'Nota não encontrada' });
+      }
+
+      // Buscar veículo se existir
+      let veiculo = null;
+      if (nota.id_veiculo) {
+        veiculo = db.prepare('SELECT * FROM veiculos WHERE id_veiculo = ?').get(nota.id_veiculo);
+      }
+
+      // Buscar peças
+      const pecas = db.prepare('SELECT * FROM pecas WHERE id_nota = ?').all(req.params.id);
+
+      res.json({
+        ...nota,
+        veiculo,
+        pecas
+      });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -307,15 +329,20 @@ function startBackend() {
   
   expressApp.put('/api/notas-fiscais/:id', (req, res) => {
     try {
-      const { valor_mao_de_obra, total_pecas, valor_total, observacoes, pecas } = req.body;
+      const { veiculo_placa, veiculo_modelo, veiculo_ano, valor_mao_de_obra, total_pecas, valor_total, observacoes, pecas } = req.body;
+      console.log('Atualizando nota:', req.params.id, req.body);
       db.exec('BEGIN TRANSACTION');
-      db.prepare('UPDATE notas_fiscais SET valor_mao_de_obra = ?, total_pecas = ?, valor_total = ?, observacoes = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id_nota = ?').run(valor_mao_de_obra, total_pecas, valor_total, observacoes, req.params.id);
+      db.prepare('UPDATE notas_fiscais SET veiculo_placa = ?, veiculo_modelo = ?, veiculo_ano = ?, valor_mao_de_obra = ?, total_pecas = ?, valor_total = ?, observacoes = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id_nota = ?').run(veiculo_placa, veiculo_modelo, veiculo_ano, valor_mao_de_obra, total_pecas, valor_total, observacoes, req.params.id);
       db.prepare('DELETE FROM pecas WHERE id_nota = ?').run(req.params.id);
-      const stmtPeca = db.prepare('INSERT INTO pecas (id_nota, descricao, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
-      pecas.forEach(peca => stmtPeca.run(req.params.id, peca.descricao, peca.quantidade, peca.valor_unitario, peca.subtotal));
+      if (pecas && pecas.length > 0) {
+        const stmtPeca = db.prepare('INSERT INTO pecas (id_nota, descricao, quantidade, valor_unitario, subtotal) VALUES (?, ?, ?, ?, ?)');
+        pecas.forEach(peca => stmtPeca.run(req.params.id, peca.descricao, peca.quantidade, peca.valor_unitario, peca.subtotal));
+      }
       db.exec('COMMIT');
+      console.log('Nota atualizada com sucesso');
       res.json({ success: true });
     } catch (error) {
+      console.error('Erro ao atualizar nota:', error);
       db.exec('ROLLBACK');
       res.status(500).json({ error: error.message });
     }
@@ -360,6 +387,7 @@ function createWindow() {
     mainWindow.loadFile(indexPath).catch(err => {
       console.error('Erro ao carregar:', err);
     });
+    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {

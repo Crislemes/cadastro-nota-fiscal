@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { useData } from '../context/DataContext';
-import { FileText, Plus, Eye, Edit, Trash2, Search, Download } from 'lucide-react';
+import { FileText, Plus, Eye, Edit, Trash2, Search, Download, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '../utils/formatters';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
@@ -22,6 +22,7 @@ import {
 
 export function InvoicesList() {
   const { invoices, deleteInvoice } = useData();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -64,14 +65,24 @@ export function InvoicesList() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="h-8 w-8 text-blue-600" />
-              Notas Fiscais
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Gerencie suas notas fiscais cadastradas
-            </p>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="h-8 w-8 text-blue-600" />
+                Notas Fiscais
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Gerencie suas notas fiscais cadastradas
+              </p>
+            </div>
           </div>
           <Link to="/notas/nova">
             <Button className="bg-blue-600 hover:bg-blue-700">

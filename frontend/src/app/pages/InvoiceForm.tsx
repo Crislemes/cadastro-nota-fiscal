@@ -5,6 +5,9 @@ import { ClientDataSection } from "../components/ClientDataSection";
 import { ServiceDataSection, Part } from "../components/ServiceDataSection";
 import { InvoiceSummary } from "../components/InvoiceSummary";
 import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { Save, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useData } from '../context/DataContext';
@@ -14,6 +17,12 @@ interface ClientData {
   cpfCnpj: string;
   phone: string;
   address: string;
+}
+
+interface VehicleData {
+  plate: string;
+  model: string;
+  year: string;
 }
 
 export function InvoiceForm() {
@@ -29,24 +38,72 @@ export function InvoiceForm() {
     address: '',
   });
 
+  const [vehicleData, setVehicleData] = useState<VehicleData>({
+    plate: '',
+    model: '',
+    year: '',
+  });
+
+  const [saleDate, setSaleDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [parts, setParts] = useState<Part[]>([]);
   const [laborCost, setLaborCost] = useState(0);
   const [observations, setObservations] = useState('');
 
   useEffect(() => {
     if (isEditing && id) {
-      const invoice = getInvoiceById(id);
-      if (invoice) {
-        setClientData(invoice.clientData);
-        setParts(invoice.parts);
-        setLaborCost(invoice.laborCost);
-        setObservations(invoice.observations);
+      loadInvoiceData(id);
+    }
+  }, [id, isEditing]);
+
+  const loadInvoiceData = async (invoiceId: string) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/notas-fiscais/${invoiceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        setClientData({
+          name: data.cliente_nome,
+          cpfCnpj: data.cpf_cnpj || '',
+          phone: data.telefone || '',
+          address: data.endereco || ''
+        });
+
+        if (data.veiculo) {
+          setVehicleData({
+            plate: data.veiculo.placa || '',
+            model: data.veiculo.modelo || '',
+            year: data.veiculo.ano || ''
+          });
+        } else if (data.veiculo_placa || data.veiculo_modelo || data.veiculo_ano) {
+          setVehicleData({
+            plate: data.veiculo_placa || '',
+            model: data.veiculo_modelo || '',
+            year: data.veiculo_ano || ''
+          });
+        }
+
+        setSaleDate((data.data_emissao || data.criado_em).split('T')[0]);
+        setLaborCost(data.valor_mao_de_obra || 0);
+        setObservations(data.observacoes || '');
+
+        if (data.pecas && data.pecas.length > 0) {
+          const mappedParts = data.pecas.map((p: any) => ({
+            id: p.id_peca.toString(),
+            name: p.descricao,
+            quantity: p.quantidade,
+            unitPrice: p.valor_unitario
+          }));
+          setParts(mappedParts);
+        }
       } else {
         toast.error('Nota fiscal não encontrada');
         navigate('/notas');
       }
+    } catch (error) {
+      toast.error('Erro ao carregar nota fiscal');
+      navigate('/notas');
     }
-  }, [id, isEditing, getInvoiceById, navigate]);
+  };
 
   // Cálculos automáticos
   const partsTotal = parts.reduce((sum, part) => sum + (part.quantity * part.unitPrice), 0);
@@ -114,28 +171,33 @@ export function InvoiceForm() {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
     const invoiceData = {
       clientData,
+      vehicleData,
       parts,
       laborCost,
       observations,
       partsTotal,
       total,
       status: 'saved' as const,
+      createdAt: new Date(saleDate).toISOString(),
     };
 
-    if (isEditing && id) {
-      updateInvoice(id, invoiceData);
-      toast.success('Nota fiscal atualizada com sucesso!');
-    } else {
-      addInvoice(invoiceData);
-      toast.success('Nota fiscal salva com sucesso!');
+    try {
+      if (isEditing && id) {
+        await updateInvoice(id, invoiceData);
+        toast.success('Nota fiscal atualizada com sucesso!');
+      } else {
+        await addInvoice(invoiceData);
+        toast.success('Nota fiscal salva com sucesso!');
+      }
+      navigate('/notas');
+    } catch (error) {
+      toast.error('Erro ao salvar nota fiscal');
     }
-
-    navigate('/notas');
   };
 
   return (
@@ -166,6 +228,66 @@ export function InvoiceForm() {
           clientData={clientData}
           onChange={handleClientDataChange}
         />
+
+        {/* Data da Venda */}
+        <Card className="shadow-md">
+          <CardHeader className="bg-blue-50 border-b">
+            <CardTitle className="text-blue-700">Data da Venda</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="max-w-xs">
+              <Label htmlFor="saleDate">Data *</Label>
+              <Input
+                id="saleDate"
+                type="date"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                required
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dados do Veículo */}
+        <Card className="shadow-md">
+          <CardHeader className="bg-blue-50 border-b">
+            <CardTitle className="text-blue-700">Dados do Veículo</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="plate">Placa</Label>
+                <Input
+                  id="plate"
+                  value={vehicleData.plate}
+                  onChange={(e) => setVehicleData(prev => ({ ...prev, plate: e.target.value.toUpperCase() }))}
+                  placeholder="ABC1234"
+                  maxLength={7}
+                />
+              </div>
+              <div>
+                <Label htmlFor="model">Modelo</Label>
+                <Input
+                  id="model"
+                  value={vehicleData.model}
+                  onChange={(e) => setVehicleData(prev => ({ ...prev, model: e.target.value }))}
+                  placeholder="Ex: GOL 1.0"
+                />
+              </div>
+              <div>
+                <Label htmlFor="year">Ano</Label>
+                <Input
+                  id="year"
+                  value={vehicleData.year}
+                  onChange={(e) => setVehicleData(prev => ({ ...prev, year: e.target.value }))}
+                  placeholder="2020"
+                  maxLength={4}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Dados do Serviço */}
         <ServiceDataSection
