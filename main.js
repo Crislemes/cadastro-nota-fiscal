@@ -246,6 +246,15 @@ function startBackend() {
     }
   });
 
+  expressApp.delete('/api/veiculos/:id', (req, res) => {
+    try {
+      db.prepare('DELETE FROM veiculos WHERE id_veiculo = ?').run(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   expressApp.get('/api/clientes/:id/veiculos', (req, res) => {
     try {
       res.json(db.prepare('SELECT * FROM veiculos WHERE id_cliente = ? ORDER BY criado_em DESC').all(req.params.id));

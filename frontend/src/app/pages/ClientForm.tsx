@@ -95,7 +95,22 @@ export function ClientForm() {
     setVehicles([...vehicles, { plate: '', model: '', brand: '', year: '' }]);
   };
 
-  const handleRemoveVehicle = (index: number) => {
+  const handleRemoveVehicle = async (index: number) => {
+    const vehicle = vehicles[index];
+    
+    // Se o veículo tem ID, deletar do banco
+    if (vehicle.id && id) {
+      try {
+        await fetch(`http://localhost:3001/api/veiculos/${vehicle.id}`, {
+          method: 'DELETE'
+        });
+        toast.success('Veículo removido com sucesso!');
+      } catch (error) {
+        toast.error('Erro ao remover veículo');
+        return;
+      }
+    }
+    
     setVehicles(vehicles.filter((_, i) => i !== index));
   };
 
@@ -126,23 +141,23 @@ export function ClientForm() {
       } else {
         clientId = await addClient(formData);
         toast.success('Cliente cadastrado com sucesso!');
-      }
-
-      // Salvar veículos
-      if (clientId && vehicles.length > 0) {
-        for (const vehicle of vehicles) {
-          if (vehicle.plate || vehicle.model || vehicle.brand || vehicle.year) {
-            await fetch('http://localhost:3001/api/veiculos', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id_cliente: parseInt(clientId),
-                placa: vehicle.plate,
-                modelo: vehicle.model,
-                marca: vehicle.brand,
-                ano: vehicle.year
-              })
-            });
+        
+        // Salvar veículos apenas ao criar novo cliente
+        if (clientId && vehicles.length > 0) {
+          for (const vehicle of vehicles) {
+            if (vehicle.plate || vehicle.model || vehicle.brand || vehicle.year) {
+              await fetch('http://localhost:3001/api/veiculos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  id_cliente: parseInt(clientId),
+                  placa: vehicle.plate,
+                  modelo: vehicle.model,
+                  marca: vehicle.brand,
+                  ano: vehicle.year
+                })
+              });
+            }
           }
         }
       }
