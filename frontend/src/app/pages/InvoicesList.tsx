@@ -147,7 +147,7 @@ export function InvoicesList() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">CPF/CNPJ</p>
                       <p className="font-medium">{invoice.clientData.cpfCnpj}</p>
@@ -155,10 +155,6 @@ export function InvoicesList() {
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Telefone</p>
                       <p className="font-medium">{invoice.clientData.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Peças</p>
-                      <p className="font-medium">{formatCurrency(invoice.partsTotal)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Valor Total</p>

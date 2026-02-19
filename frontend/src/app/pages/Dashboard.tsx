@@ -123,7 +123,7 @@ export function Dashboard() {
         {/* Action Cards */}
         <div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Acesso Rápido</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Clientes Card */}
             <Card className="shadow-md hover:shadow-lg transition-shadow">
               <CardHeader className="bg-blue-50 border-b">
@@ -139,29 +139,21 @@ export function Dashboard() {
                 <p className="text-sm text-gray-600">
                   Cadastre, visualize e edite os dados dos seus clientes.
                 </p>
-                <div className="space-y-2">
-                  <Link to="/clientes">
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                      Ver Lista de Clientes
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                  <Link to="/clientes/novo">
-                    <Button variant="outline" className="w-full border-blue-200">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Cadastrar Novo Cliente
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/clientes">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    Lista de Clientes
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
-            {/* Notas Cadastradas Card */}
+            {/* Notas Card */}
             <Card className="shadow-md hover:shadow-lg transition-shadow">
               <CardHeader className="bg-green-50 border-b">
                 <CardTitle className="flex items-center gap-2 text-green-700">
                   <FileText className="h-5 w-5" />
-                  Notas Cadastradas
+                  Notas
                 </CardTitle>
                 <CardDescription>
                   Visualize e gerencie suas notas fiscais
@@ -171,40 +163,12 @@ export function Dashboard() {
                 <p className="text-sm text-gray-600">
                   Acesse, edite, exclua e gere PDFs das notas fiscais.
                 </p>
-                <div className="space-y-2">
-                  <Link to="/notas">
-                    <Button className="w-full bg-green-600 hover:bg-green-700">
-                      Ver Notas Fiscais
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Nova Nota Card */}
-            <Card className="shadow-md hover:shadow-lg transition-shadow border-2 border-purple-200">
-              <CardHeader className="bg-purple-50 border-b">
-                <CardTitle className="flex items-center gap-2 text-purple-700">
-                  <PlusCircle className="h-5 w-5" />
-                  Nova Nota Fiscal
-                </CardTitle>
-                <CardDescription>
-                  Cadastre uma nova nota fiscal
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-3">
-                <p className="text-sm text-gray-600">
-                  Crie uma nova nota fiscal com dados do cliente e serviços.
-                </p>
-                <div className="space-y-2">
-                  <Link to="/notas/nova">
-                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                      Criar Nova Nota
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
+                <Link to="/notas">
+                  <Button className="w-full bg-green-600 hover:bg-green-700">
+                    Notas Fiscais
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

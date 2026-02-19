@@ -90,14 +90,9 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
   
   yPosition += 4;
   doc.text('cristimaria077@gmail.com', 18, yPosition);
-  
-  yPosition += 4;
-  doc.setTextColor(107, 114, 128);
-  doc.setFontSize(7);
-  doc.text('A&C Centro Automotivo - Sistema de Gestão de Notas Fiscais', 18, yPosition);
 
   // Data de Emissão
-  yPosition += 8;
+  yPosition += 10;
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
   const invoiceDate = new Date(data.createdAt).toLocaleDateString('pt-BR');
@@ -164,7 +159,7 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(55, 65, 81);
-    doc.text('Descrição', 18, yPosition);
+    doc.text('Nome da Peça', 18, yPosition);
     doc.text('Qtd', 120, yPosition, { align: 'center' });
     doc.text('Valor Unit.', 150, yPosition, { align: 'right' });
     doc.text('Subtotal', pageWidth - 18, yPosition, { align: 'right' });
@@ -193,24 +188,19 @@ export const generateInvoicePDF = async (data: InvoiceData) => {
       }
     });
     
+    // Mão de Obra
     doc.setDrawColor(229, 231, 235);
     doc.line(15, yPosition - 3, pageWidth - 15, yPosition - 3);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81);
+    doc.text('Mão de Obra:', 18, yPosition);
+    doc.text(formatCurrency(data.laborCost), pageWidth - 18, yPosition, { align: 'right' });
+    
+    yPosition += 3;
+    doc.setDrawColor(229, 231, 235);
+    doc.line(15, yPosition, pageWidth - 15, yPosition);
   }
-
-  // Totais
-  yPosition += 5;
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(107, 114, 128);
-  doc.text('Total das Peças:', 120, yPosition);
-  doc.setTextColor(31, 41, 55);
-  doc.text(formatCurrency(data.partsTotal), pageWidth - 18, yPosition, { align: 'right' });
-  
-  yPosition += 6;
-  doc.setTextColor(107, 114, 128);
-  doc.text('Mão de Obra:', 120, yPosition);
-  doc.setTextColor(31, 41, 55);
-  doc.text(formatCurrency(data.laborCost), pageWidth - 18, yPosition, { align: 'right' });
   
   // Total Final
   yPosition += 8;

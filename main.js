@@ -255,6 +255,19 @@ function startBackend() {
     }
   });
 
+  expressApp.put('/api/veiculos/:id', (req, res) => {
+    try {
+      const { placa, modelo, marca, ano } = req.body;
+      console.log('Atualizando veículo:', req.params.id, req.body);
+      const result = db.prepare('UPDATE veiculos SET placa = ?, modelo = ?, marca = ?, ano = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id_veiculo = ?').run(placa, modelo, marca, ano, req.params.id);
+      console.log('Veículo atualizado, linhas afetadas:', result.changes);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Erro ao atualizar veículo:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   expressApp.get('/api/clientes/:id/veiculos', (req, res) => {
     try {
       res.json(db.prepare('SELECT * FROM veiculos WHERE id_cliente = ? ORDER BY criado_em DESC').all(req.params.id));

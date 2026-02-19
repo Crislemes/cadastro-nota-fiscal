@@ -215,7 +215,7 @@ export function ViewInvoice({ invoiceId, onBack }: ViewInvoiceProps) {
                     <table className="w-full border-collapse">
                       <thead>
                         <tr className="bg-gray-100 border-b">
-                          <th className="text-left p-3 text-sm">Descrição</th>
+                          <th className="text-left p-3 text-sm">Nome da Peça</th>
                           <th className="text-left p-3 text-sm w-24">Qtd</th>
                           <th className="text-left p-3 text-sm w-32">Valor Unit.</th>
                           <th className="text-left p-3 text-sm w-32">Subtotal</th>
@@ -230,24 +230,17 @@ export function ViewInvoice({ invoiceId, onBack }: ViewInvoiceProps) {
                             <td className="p-3 font-medium">{formatCurrency(item.subtotal)}</td>
                           </tr>
                         ))}
+                        <tr className="border-b">
+                          <td className="p-3 text-gray-600 font-semibold">Mão de Obra:</td>
+                          <td className="p-3 w-24"></td>
+                          <td className="p-3 w-32"></td>
+                          <td className="p-3 w-32 font-semibold">{formatCurrency(nota.valor_mao_de_obra)}</td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
-
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="p-3 text-gray-600">Mão de Obra:</td>
-                      <td className="p-3 w-24"></td>
-                      <td className="p-3 w-32"></td>
-                      <td className="p-3 w-32 font-medium">{formatCurrency(nota.valor_mao_de_obra)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
 
               {nota.observacoes && (
                 <div className="mt-4">

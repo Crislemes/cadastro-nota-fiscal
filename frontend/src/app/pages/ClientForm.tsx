@@ -114,6 +114,65 @@ export function ClientForm() {
     setVehicles(vehicles.filter((_, i) => i !== index));
   };
 
+  const handleSaveVehicle = async (index: number) => {
+    const vehicle = vehicles[index];
+    
+    if (!vehicle.plate && !vehicle.model && !vehicle.brand && !vehicle.year) {
+      toast.error('Preencha pelo menos um campo do veículo');
+      return;
+    }
+
+    try {
+      if (vehicle.id) {
+        console.log('Atualizando veículo:', vehicle);
+        const response = await fetch(`http://localhost:3001/api/veiculos/${vehicle.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            placa: vehicle.plate,
+            modelo: vehicle.model,
+            marca: vehicle.brand,
+            ano: vehicle.year
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao atualizar veículo');
+        }
+        
+        console.log('Veículo atualizado com sucesso');
+        toast.success('Veículo atualizado com sucesso!');
+      } else if (id) {
+        console.log('Inserindo novo veículo:', vehicle);
+        const response = await fetch('http://localhost:3001/api/veiculos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id_cliente: parseInt(id),
+            placa: vehicle.plate,
+            modelo: vehicle.model,
+            marca: vehicle.brand,
+            ano: vehicle.year
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Erro ao salvar veículo');
+        }
+        
+        const data = await response.json();
+        const updated = [...vehicles];
+        updated[index] = { ...vehicle, id: data.id.toString() };
+        setVehicles(updated);
+        console.log('Veículo salvo com sucesso, ID:', data.id);
+        toast.success('Veículo salvo com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar veículo:', error);
+      toast.error('Erro ao salvar veículo');
+    }
+  };
+
   const handleVehicleChange = (index: number, field: keyof Vehicle, value: string) => {
     const updated = [...vehicles];
     updated[index] = { ...updated[index], [field]: value };
@@ -292,19 +351,20 @@ export function ClientForm() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddVehicle}
+                className="w-full border-green-200 text-green-600 hover:bg-green-50"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Novo Veículo
+              </Button>
+
               {vehicles.length === 0 ? (
                 <div className="text-center py-8">
                   <Car className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 mb-4">Nenhum veículo cadastrado</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddVehicle}
-                    className="border-green-200 text-green-600 hover:bg-green-50"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Primeiro Veículo
-                  </Button>
+                  <p className="text-gray-500">Nenhum veículo cadastrado</p>
                 </div>
               ) : (
                 vehicles.map((vehicle, index) => (
@@ -352,11 +412,11 @@ export function ClientForm() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={handleAddVehicle}
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 flex-1"
+                      onClick={() => handleSaveVehicle(index)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 flex-1"
                     >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Inserir
+                      <Save className="h-4 w-4 mr-1" />
+                      Salvar
                     </Button>
                     <Button
                       type="button"

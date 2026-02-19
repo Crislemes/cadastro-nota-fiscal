@@ -163,9 +163,9 @@ export function InvoiceView() {
                     <thead>
                       <tr className="bg-gray-100 border-b">
                         <th className="text-left p-3 text-sm">Nome da Peça</th>
-                        <th className="text-left p-3 text-sm">Quantidade</th>
-                        <th className="text-left p-3 text-sm">Valor Unitário</th>
-                        <th className="text-left p-3 text-sm">Subtotal</th>
+                        <th className="text-left p-3 text-sm w-24">Quantidade</th>
+                        <th className="text-left p-3 text-sm w-32">Valor Unitário</th>
+                        <th className="text-left p-3 text-sm w-32">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -179,9 +179,11 @@ export function InvoiceView() {
                           </td>
                         </tr>
                       ))}
-                      <tr className="bg-gray-50 font-semibold">
-                        <td colSpan={3} className="p-3 text-right">Total das Peças:</td>
-                        <td className="p-3">{formatCurrency(invoice.partsTotal)}</td>
+                      <tr className="border-b">
+                        <td className="p-3 font-semibold">Mão de Obra:</td>
+                        <td className="p-3 w-24"></td>
+                        <td className="p-3 w-32"></td>
+                        <td className="p-3 font-semibold">{formatCurrency(invoice.laborCost)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -189,15 +191,7 @@ export function InvoiceView() {
               )}
             </div>
 
-            {/* Labor Cost */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold">Mão de Obra:</span>
-                <span className="text-lg font-medium">{formatCurrency(invoice.laborCost)}</span>
-              </div>
-            </div>
-
-            {/* Observations */}
+{/* Observations */}
             {invoice.observations && (
               <div className="border-t pt-4">
                 <h3 className="font-semibold mb-2">Observações</h3>

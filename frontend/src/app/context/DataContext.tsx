@@ -236,28 +236,75 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addInvoice = async (invoice: Omit<Invoice, 'id'>) => {
     try {
-      const cliente = clients.find(c => c.name === invoice.clientData.name);
+      // Buscar ou criar cliente
+      let cliente = clients.find(c => c.name === invoice.clientData.name && c.phone === invoice.clientData.phone);
+      
       if (!cliente) {
-        throw new Error('Cliente não encontrado');
-      }
-
-      // Salvar veículo se fornecido
-      let vehicleId = null;
-      if (invoice.vehicleData && (invoice.vehicleData.plate || invoice.vehicleData.model)) {
-        const vehicleResponse = await fetch('http://localhost:3001/api/veiculos', {
+        // Cliente não existe, criar novo
+        const clienteResponse = await fetch('http://localhost:3001/api/clientes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id_cliente: parseInt(cliente.id),
-            placa: invoice.vehicleData.plate,
-            modelo: invoice.vehicleData.model,
-            marca: invoice.vehicleData.brand || '',
-            ano: invoice.vehicleData.year
+            nome: invoice.clientData.name,
+            cpf_cnpj: invoice.clientData.cpfCnpj,
+            telefone: invoice.clientData.phone,
+            endereco: invoice.clientData.address,
+            observacoes: ''
           })
         });
-        if (vehicleResponse.ok) {
-          const vehicleData = await vehicleResponse.json();
-          vehicleId = vehicleData.id;
+
+        if (!clienteResponse.ok) {
+          const error = await clienteResponse.json();
+          throw new Error(error.error || 'Erro ao criar cliente');
+        }
+
+        const clienteData = await clienteResponse.json();
+        await loadClients();
+        cliente = {
+          id: clienteData.id.toString(),
+          name: invoice.clientData.name,
+          cpfCnpj: invoice.clientData.cpfCnpj,
+          phone: invoice.clientData.phone,
+          address: invoice.clientData.address,
+          email: '',
+          createdAt: new Date().toISOString()
+        };
+      }
+
+      // Buscar ou criar veículo se fornecido
+      let vehicleId = null;
+      if (invoice.vehicleData && (invoice.vehicleData.plate || invoice.vehicleData.model)) {
+        // Verificar se veículo já existe para este cliente
+        const veiculosResponse = await fetch(`http://localhost:3001/api/clientes/${cliente.id}/veiculos`);
+        let veiculoExistente = null;
+        
+        if (veiculosResponse.ok) {
+          const veiculos = await veiculosResponse.json();
+          veiculoExistente = veiculos.find((v: any) => 
+            v.placa === invoice.vehicleData?.plate && 
+            v.modelo === invoice.vehicleData?.model
+          );
+        }
+
+        if (veiculoExistente) {
+          vehicleId = veiculoExistente.id_veiculo;
+        } else {
+          // Criar novo veículo
+          const vehicleResponse = await fetch('http://localhost:3001/api/veiculos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id_cliente: parseInt(cliente.id),
+              placa: invoice.vehicleData.plate,
+              modelo: invoice.vehicleData.model,
+              marca: '',
+              ano: invoice.vehicleData.year
+            })
+          });
+          if (vehicleResponse.ok) {
+            const vehicleData = await vehicleResponse.json();
+            vehicleId = vehicleData.id;
+          }
         }
       }
 
@@ -298,6 +345,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateInvoice = async (id: string, invoice: Omit<Invoice, 'id' | 'createdAt'>) => {
     try {
+      // Buscar a nota para obter o id_cliente e id_veiculo
+      const notaResponse = await fetch(`http://localhost:3001/api/notas-fiscais/${id}`);
+      if (!notaResponse.ok) throw new Error('Nota não encontrada');
+      
+      const notaData = await notaResponse.json();
+      
+      // Atualizar dados do cliente
+      if (notaData.id_cliente) {
+        await fetch(`http://localhost:3001/api/clientes/${notaData.id_cliente}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome: invoice.clientData.name,
+            cpf_cnpj: invoice.clientData.cpfCnpj,
+            telefone: invoice.clientData.phone,
+            endereco: invoice.clientData.address,
+            observacoes: ''
+          })
+        });
+      }
+
+      // Atualizar dados do veículo se existir
+      if (notaData.id_veiculo && invoice.vehicleData) {
+        await fetch(`http://localhost:3001/api/veiculos/${notaData.id_veiculo}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            placa: invoice.vehicleData.plate,
+            modelo: invoice.vehicleData.model,
+            marca: '',
+            ano: invoice.vehicleData.year
+          })
+        });
+      }
+
+      // Atualizar nota fiscal
       const response = await fetch(`http://localhost:3001/api/notas-fiscais/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -322,6 +405,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         throw new Error('Erro ao atualizar nota fiscal');
       }
 
+      await loadClients();
       await loadInvoices();
     } catch (error) {
       throw error;
